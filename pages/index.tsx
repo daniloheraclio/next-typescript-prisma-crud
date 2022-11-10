@@ -81,7 +81,7 @@ const Home = ({ notes }: NotesProps) => {
 
   async function handleDelete(id: string) {
     try {
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/note/${note.id}`, {
+      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/note/${id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
