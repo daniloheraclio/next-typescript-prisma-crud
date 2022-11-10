@@ -46,7 +46,7 @@ const Home = ({ notes }: NotesProps) => {
 
     if (action === 'NEW') {
       try {
-        fetch('http://localhost:3000/api/create', {
+        fetch(`https://next-typescript-prisma-crud.vercel.app/api/create`, {
           method: 'POST',
           body: JSON.stringify(note),
           headers: {
@@ -63,13 +63,16 @@ const Home = ({ notes }: NotesProps) => {
 
     if (action === 'EDIT') {
       try {
-        await fetch(`http://localhost:3000/api/note/${note.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(note),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }).then(() => {
+        await fetch(
+          `https://next-typescript-prisma-crud.vercel.app/api/note/${note.id}`,
+          {
+            method: 'PUT',
+            body: JSON.stringify(note),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        ).then(() => {
           resetData();
           refreshData();
         });
@@ -81,7 +84,7 @@ const Home = ({ notes }: NotesProps) => {
 
   async function handleDelete(id: string) {
     try {
-      fetch(`http://localhost:3000/api/note/${id}`, {
+      fetch(`https://next-typescript-prisma-crud.vercel.app/api/note/${note.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
