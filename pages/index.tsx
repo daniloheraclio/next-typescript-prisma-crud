@@ -1,10 +1,11 @@
 import type { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { prisma } from '../lib/prisma';
 
 import { NoteItem } from '../components/NoteItem';
+import { validateConfig } from 'next/dist/server/config-shared';
 
 interface NotesProps {
   notes: {
@@ -23,25 +24,58 @@ export interface INote {
 const Home = ({ notes }: NotesProps) => {
   const router = useRouter();
   const [note, setNote] = useState<INote>({ title: '', content: '', id: '' } as INote);
+  const [action, setAction] = useState<'NEW' | 'EDIT'>('NEW');
+  const [isValid, setIsValid] = useState(false);
 
   const refreshData = () => {
     router.replace(router.asPath);
   };
 
+  useEffect(() => {
+    setIsValid(!!(note.title && note.content));
+  }, [note]);
+
   async function handleSubmit(note: INote) {
-    try {
-      fetch('http://localhost:3000/api/create', {
-        method: 'POST',
-        body: JSON.stringify(note),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).then(() => {
-        setNote({ title: '', content: '', id: '' });
-        refreshData();
-      });
-    } catch (error) {
-      console.log(error);
+    setIsValid(!!(note.title && note.content));
+
+    if (!isValid) return;
+
+    console.log(note);
+    const action = note.id ? 'EDIT' : 'NEW';
+    setAction(action);
+
+    if (action === 'NEW') {
+      try {
+        fetch('http://localhost:3000/api/create', {
+          method: 'POST',
+          body: JSON.stringify(note),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }).then(() => {
+          setNote({ title: '', content: '', id: '' });
+          refreshData();
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    if (action === 'EDIT') {
+      try {
+        await fetch(`http://localhost:3000/api/note/${note.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(note),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }).then(() => {
+          resetData();
+          refreshData();
+        });
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 
@@ -60,6 +94,16 @@ const Home = ({ notes }: NotesProps) => {
     }
   }
 
+  async function handleUpdate(note: INote) {
+    setAction('EDIT');
+    setNote(note);
+  }
+
+  function resetData() {
+    setNote({ id: '', title: '', content: '' });
+    setAction('NEW');
+  }
+
   return (
     <div>
       <Head>
@@ -69,7 +113,7 @@ const Home = ({ notes }: NotesProps) => {
       </Head>
       <section className="h-screen w-screen flex flex-col justify-start items-center">
         <h1 className="text-5xl text-center font-bold my-4">Notes</h1>
-        <div className="mx-2">
+        <div className="mx-2 max-w-[400px]">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -90,8 +134,21 @@ const Home = ({ notes }: NotesProps) => {
               value={note.content}
               onChange={(e) => setNote({ ...note, content: e.target.value })}
             />
-            <button type="submit" className="w-full py-2 bg-blue-500 text-white rounded ">
-              Add +
+            {action === 'EDIT' && (
+              <button
+                type="button"
+                className="w-full py-2 bg-red-500 text-white rounded"
+                onClick={resetData}
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={!isValid}
+              className="w-full py-2 bg-blue-500 text-white rounded disabled:bg-gray-600 disabled:text-zinc-300 disabled:cursor-not-allowed"
+            >
+              {action === 'NEW' ? 'Add +' : 'Save'}
             </button>
           </form>
         </div>
@@ -102,6 +159,8 @@ const Home = ({ notes }: NotesProps) => {
               <NoteItem
                 key={note.id}
                 note={note}
+                action={action}
+                handleUpdate={() => handleUpdate(note)}
                 handleDelete={() => handleDelete(note.id)}
               />
             ))}
