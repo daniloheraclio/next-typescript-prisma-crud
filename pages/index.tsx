@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { prisma } from '../lib/prisma';
 
 import { NoteItem } from '../components/NoteItem';
-import { validateConfig } from 'next/dist/server/config-shared';
 
 interface NotesProps {
   notes: {
@@ -40,22 +39,21 @@ const Home = ({ notes }: NotesProps) => {
 
     if (!isValid) return;
 
-    console.log(note);
     const action = note.id ? 'EDIT' : 'NEW';
     setAction(action);
 
     if (action === 'NEW') {
       try {
-        fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/create`, {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/create`, {
           method: 'POST',
           body: JSON.stringify(note),
           headers: {
             'Content-Type': 'application/json',
           },
-        }).then(() => {
-          setNote({ title: '', content: '', id: '' });
-          refreshData();
         });
+
+        setNote({ title: '', content: '', id: '' });
+        refreshData();
       } catch (error) {
         console.log(error);
       }
@@ -69,10 +67,10 @@ const Home = ({ notes }: NotesProps) => {
           headers: {
             'Content-Type': 'application/json',
           },
-        }).then(() => {
-          resetData();
-          refreshData();
         });
+
+        resetData();
+        refreshData();
       } catch (error) {
         console.log(error);
       }
@@ -81,14 +79,14 @@ const Home = ({ notes }: NotesProps) => {
 
   async function handleDelete(id: string) {
     try {
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/note/${id}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/note/${id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-      }).then(() => {
-        refreshData();
       });
+
+      refreshData();
     } catch (error) {
       console.log(error);
     }
